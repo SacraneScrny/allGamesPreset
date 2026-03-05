@@ -1,6 +1,7 @@
 ﻿using JetBrains.Annotations;
 
 using Sackrany.Actor.Traits.Affinity;
+using Sackrany.Actor.UnitMono;
 using Sackrany.Variables.Numerics;
 
 using UnityEngine;
@@ -17,8 +18,8 @@ namespace Sackrany.Actor.Traits.Damage
         Vector3 AttackPosition { get; }
         IAffinity Affinity { get; }
         
-        Unit.Unit Attacker { get; }
-        Unit.Unit Target { get; }
+        Unit Attacker { get; }
+        Unit Target { get; }
 
         bool HitSomebody();
         bool HitSelf();
@@ -33,8 +34,8 @@ namespace Sackrany.Actor.Traits.Damage
         public Vector3 AttackPosition { get; }
         public IAffinity Affinity { get; }
 
-        public Unit.Unit Attacker { get; }
-        public Unit.Unit Target { get; }
+        public Unit Attacker { get; }
+        public Unit Target { get; }
         
         public bool HitSomebody() => Target != null;
         public bool HitSelf() => HitSomebody() && Attacker == Target;
@@ -44,8 +45,8 @@ namespace Sackrany.Actor.Traits.Damage
             BigNumber damage,
             Vector3? hitPosition,
             Vector3? attackPosition,
-            [CanBeNull] Unit.Unit attacker,
-            [CanBeNull] Unit.Unit target,
+            [CanBeNull] Unit attacker,
+            [CanBeNull] Unit target,
             [CanBeNull] IAffinity affinity)
         {
             Damage = damage;
@@ -77,8 +78,8 @@ namespace Sackrany.Actor.Traits.Damage
         public Vector3 AttackPosition { get; }
         public IAffinity Affinity { get; }
 
-        public Unit.Unit Attacker { get; }
-        public Unit.Unit Target { get; }
+        public Unit Attacker { get; }
+        public Unit Target { get; }
         
         public bool HitSomebody() => Target != null;
         public bool HitSelf() => HitSomebody() && Attacker == Target;
@@ -88,8 +89,8 @@ namespace Sackrany.Actor.Traits.Damage
             float damage,
             Vector3? hitPosition,
             Vector3? attackPosition,
-            [CanBeNull] Unit.Unit attacker,
-            [CanBeNull] Unit.Unit target,
+            [CanBeNull] Unit attacker,
+            [CanBeNull] Unit target,
             [CanBeNull] IAffinity affinity)
         {
             Damage = damage;

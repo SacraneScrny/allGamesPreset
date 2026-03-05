@@ -5,33 +5,34 @@ using Cysharp.Threading.Tasks;
 
 using Sackrany.Actor.Managers;
 using Sackrany.Actor.Modules.Modules;
+using Sackrany.Actor.UnitMono;
 
 namespace Sackrany.Actor.Static
 {
     public readonly struct UnitChain
     {
-        readonly Unit.Unit _unit;
+        readonly Unit _unit;
         readonly bool _valid;
 
-        public UnitChain(Unit.Unit unit)
+        public UnitChain(Unit unit)
         {
             _unit  = unit;
             _valid = unit != null && unit.IsActive;
         }
 
-        public static UnitChain From(Unit.Unit unit) => new(unit);
-        public static UnitChain Find(Func<Unit.Unit, bool> p) => new(UnitRegisterManager.GetUnit(u => u.IsActive && p(u)));
-        public UnitChain FlatMap(Func<Unit.Unit, UnitChain> selector)
+        public static UnitChain From(Unit unit) => new(unit);
+        public static UnitChain Find(Func<Unit, bool> p) => new(UnitRegisterManager.GetUnit(u => u.IsActive && p(u)));
+        public UnitChain FlatMap(Func<Unit, UnitChain> selector)
             => _valid ? selector(_unit) : default;
 
-        public UnitChain Where(Func<Unit.Unit, bool> predicate)
+        public UnitChain Where(Func<Unit, bool> predicate)
             => _valid && predicate(_unit) ? this : default;
         public UnitChain Where<TModule>(Func<TModule, bool> predicate) where TModule : Module
             => _valid && _unit.TryGet(out TModule m) && predicate(m) ? this : default;
         public UnitChain Has<TModule>() where TModule : Module
             => _valid && _unit.Has<TModule>() ? this : default;
 
-        public UnitChain Do(Action<Unit.Unit> action)
+        public UnitChain Do(Action<Unit> action)
         {
             if (_valid) action(_unit);
             return this;
@@ -54,29 +55,29 @@ namespace Sackrany.Actor.Static
             return default;
         }
         
-        public UnitChain Select(Func<Unit.Unit, Unit.Unit> selector)
+        public UnitChain Select(Func<Unit, Unit> selector)
             => _valid ? new UnitChain(selector(_unit)) : default;
-        public UnitChain Branch(Func<Unit.Unit, bool> predicate, Action<UnitChain> onTrue, Action<UnitChain> onFalse = null)
+        public UnitChain Branch(Func<Unit, bool> predicate, Action<UnitChain> onTrue, Action<UnitChain> onFalse = null)
         {
             if (!_valid) return this;
             if (predicate(_unit)) onTrue(this);
             else onFalse?.Invoke(this);
             return this;
         }
-        public UnitChain Tap(Action<Unit.Unit> action) => Do(action);
+        public UnitChain Tap(Action<Unit> action) => Do(action);
         
         public TResult Get<TModule, TResult>(Func<TModule, TResult> selector, TResult fallback = default)
             where TModule : Module
             => _valid && _unit.TryGet(out TModule m) ? selector(m) : fallback;
-        public TResult Get<TResult>(Func<Unit.Unit, TResult> selector, TResult fallback = default)
+        public TResult Get<TResult>(Func<Unit, TResult> selector, TResult fallback = default)
             => _valid ? selector(_unit) : fallback;
-        public bool TryGet(out Unit.Unit unit)
+        public bool TryGet(out Unit unit)
         {
             unit = _valid ? _unit : null;
             return _valid;
         }
         
-        public async UniTask<UnitChain> DoAsync(Func<Unit.Unit, UniTask> action)
+        public async UniTask<UnitChain> DoAsync(Func<Unit, UniTask> action)
         {
             if (_valid) await action(_unit);
             return this;
@@ -95,20 +96,20 @@ namespace Sackrany.Actor.Static
         }
 
         public bool IsValid => _valid;
-        public Unit.Unit Value => _valid ? _unit : null;
+        public Unit Value => _valid ? _unit : null;
 
         public static implicit operator bool(UnitChain chain) => chain._valid;
-        public static implicit operator Unit.Unit(UnitChain chain) => chain.Value;
-        public static implicit operator UnitChain(Unit.Unit unit) => new(unit);
+        public static implicit operator Unit(UnitChain chain) => chain.Value;
+        public static implicit operator UnitChain(Unit unit) => new(unit);
     }
     
     public readonly struct ModuleChain<TModule> where TModule : Module
     {
         readonly TModule _module;
-        readonly Unit.Unit _unit;
+        readonly Unit _unit;
         readonly bool _valid;
 
-        internal ModuleChain(TModule module, Unit.Unit unit)
+        internal ModuleChain(TModule module, Unit unit)
         {
             _module = module;
             _unit = unit;
@@ -122,7 +123,7 @@ namespace Sackrany.Actor.Static
             if (_valid) action(_module);
             return this;
         }
-        public ModuleChain<TModule> Do(Action<TModule, Unit.Unit> action)
+        public ModuleChain<TModule> Do(Action<TModule, Unit> action)
         {
             if (_valid) action(_module, _unit);
             return this;

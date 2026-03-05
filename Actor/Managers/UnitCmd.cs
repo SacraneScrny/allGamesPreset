@@ -4,6 +4,7 @@ using System.Threading;
 
 using Cysharp.Threading.Tasks;
 
+using Sackrany.Actor.UnitMono;
 using Sackrany.Utils;
 
 namespace Sackrany.Actor.Managers
@@ -21,8 +22,8 @@ namespace Sackrany.Actor.Managers
 
         public class UnitCommand
         {
-            public Func<Unit.Unit, bool> cond;
-            public Action<Unit.Unit> action;
+            public Func<Unit, bool> cond;
+            public Action<Unit> action;
             public readonly List<Action> callbacks = new();
             public bool completed;
         }
@@ -76,7 +77,7 @@ namespace Sackrany.Actor.Managers
             _isRunning = false;
         }
 
-        public static CommandHandle Execute(Func<Unit.Unit, bool> cond, Action<Unit.Unit> action)
+        public static CommandHandle Execute(Func<Unit, bool> cond, Action<Unit> action)
         {
             var cmd = new UnitCommand
             {

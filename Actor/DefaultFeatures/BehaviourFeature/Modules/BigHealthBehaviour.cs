@@ -4,6 +4,7 @@ using Sackrany.Actor.EventBus;
 using Sackrany.Actor.Modules;
 using Sackrany.Actor.Modules.Modules;
 using Sackrany.Actor.Traits.Damage;
+using Sackrany.Actor.UnitMono;
 using Sackrany.Variables.ExpandedVariable.Entities;
 using Sackrany.Variables.Numerics;
 
@@ -35,7 +36,7 @@ namespace Sackrany.Actor.DefaultFeatures.BehaviourFeature.Modules
         {
             OnHealthChanged?.Invoke(Health);
             if (_alreadyDied || val > 0) return;
-            Unit.Event.Publish<OnDied, Unit.Unit>(Unit, true);
+            Unit.Event.Publish<OnDied, Unit>(Unit, true);
             OnDied?.Invoke();
             _alreadyDied = true;
         }

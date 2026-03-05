@@ -3,14 +3,15 @@ using System.Collections.Generic;
 
 using Sackrany.Actor.Managers;
 using Sackrany.Actor.Modules.Modules;
+using Sackrany.Actor.UnitMono;
 
 namespace Sackrany.Actor.Static
 {
     public sealed class UnitPipeline
     {
-        readonly List<Func<Unit.Unit, bool>> _steps = new();
+        readonly List<Func<Unit, bool>> _steps = new();
 
-        public UnitPipeline Where(Func<Unit.Unit, bool> predicate)
+        public UnitPipeline Where(Func<Unit, bool> predicate)
         {
             _steps.Add(predicate);
             return this;
@@ -26,7 +27,7 @@ namespace Sackrany.Actor.Static
             return this;
         }
         
-        public UnitPipeline Do(Action<Unit.Unit> action)
+        public UnitPipeline Do(Action<Unit> action)
         {
             _steps.Add(u => { action(u); return true; });
             return this;
@@ -41,14 +42,14 @@ namespace Sackrany.Actor.Static
             return this;
         }
 
-        public bool Execute(Unit.Unit unit)
+        public bool Execute(Unit unit)
         {
             if (unit == null || !unit.IsActive) return false;
             foreach (var step in _steps)
                 if (!step(unit)) return false;
             return true;
         }
-        public int Execute(IEnumerable<Unit.Unit> units)
+        public int Execute(IEnumerable<Unit> units)
         {
             int count = 0;
             foreach (var unit in units)

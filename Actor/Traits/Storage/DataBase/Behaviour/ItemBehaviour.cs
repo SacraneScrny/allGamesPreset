@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Sackrany.Actor.Modules.Modules;
 using Sackrany.Actor.Static;
 using Sackrany.Actor.Traits.EffectsFeature;
+using Sackrany.Actor.UnitMono;
 
 using UnityEngine;
 
@@ -11,8 +12,8 @@ namespace Sackrany.Actor.Traits.Storage.DataBase.Behaviour
 {
     public interface IItemBehaviour
     {
-        public void OnUse(Unit.Unit unit, ItemUseContext ctx);
-        public void OnUnUse(Unit.Unit unit, ItemUseContext ctx) { }
+        public void OnUse(Unit unit, ItemUseContext ctx);
+        public void OnUnUse(Unit unit, ItemUseContext ctx) { }
     }
 
     [Serializable]
@@ -21,13 +22,13 @@ namespace Sackrany.Actor.Traits.Storage.DataBase.Behaviour
         [SerializeField][SerializeReference][SubclassSelector]
         public ModuleTemplate[] Modules;
 
-        public void OnUse(Unit.Unit unit, ItemUseContext ctx)
+        public void OnUse(Unit unit, ItemUseContext ctx)
         {
             foreach (var t in Modules)
                 if (unit.Add(t, out var module))
                     ctx.TrackModule(module);
         }
-        public void OnUnUse(Unit.Unit unit, ItemUseContext ctx) { }
+        public void OnUnUse(Unit unit, ItemUseContext ctx) { }
     }   
     [Serializable]
     public class InjectEffects : IItemBehaviour
@@ -35,7 +36,7 @@ namespace Sackrany.Actor.Traits.Storage.DataBase.Behaviour
         [SerializeField][SerializeReference][SubclassSelector]
         public EffectTemplate[] Effects;
 
-        public void OnUse(Unit.Unit unit, ItemUseContext ctx)
+        public void OnUse(Unit unit, ItemUseContext ctx)
         {
             unit.Maybe<EffectHandlerModule>(h =>
             {
@@ -51,13 +52,13 @@ namespace Sackrany.Actor.Traits.Storage.DataBase.Behaviour
     
     public class ItemUseContext
     {
-        readonly Unit.Unit _unit;
+        readonly Unit _unit;
         readonly List<Module> _modules = new();
         readonly List<Effect> _effects = new();
 
         public ContextKey Key { get; }
 
-        public ItemUseContext(Unit.Unit unit, ContextKey key)
+        public ItemUseContext(Unit unit, ContextKey key)
         {
             _unit = unit;
             Key = key;

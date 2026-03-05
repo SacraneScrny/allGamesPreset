@@ -1,6 +1,7 @@
 ﻿using System;
 
 using Sackrany.Actor.Traits.Storage.DataBase.Behaviour;
+using Sackrany.Actor.UnitMono;
 
 namespace Sackrany.Actor.Traits.Storage.DataBase
 {
@@ -15,11 +16,11 @@ namespace Sackrany.Actor.Traits.Storage.DataBase
         public bool IsUniqueContext => Config.IsUniqueContext;
         public Item GetItem() => new Item(this);
 
-        public virtual void OnUse(Unit.Unit unit, ItemUseContext ctx)
+        public virtual void OnUse(Unit unit, ItemUseContext ctx)
         {
             foreach (var b in Config.OnUseBehaviours) b.OnUse(unit, ctx);
         }
-        public virtual void OnUnUse(Unit.Unit unit, ItemUseContext ctx)
+        public virtual void OnUnUse(Unit unit, ItemUseContext ctx)
         {
             foreach (var b in Config.OnUnUseBehaviours) b.OnUnUse(unit, ctx);
         }

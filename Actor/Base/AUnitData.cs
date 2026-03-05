@@ -1,9 +1,11 @@
-﻿namespace Sackrany.Actor.Base
+﻿using Sackrany.Actor.UnitMono;
+
+namespace Sackrany.Actor.Base
 {
     public abstract class AUnitData
     {
-        private protected Unit.Unit _unit;
-        public void Initialize(Unit.Unit unit)
+        private protected Unit _unit;
+        public void Initialize(Unit unit)
         {
             _unit = unit;
             OnInitialize();

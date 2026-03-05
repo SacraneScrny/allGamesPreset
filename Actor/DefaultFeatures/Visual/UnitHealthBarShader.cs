@@ -1,5 +1,6 @@
 ﻿using Sackrany.Actor.DefaultFeatures.BehaviourFeature.Modules;
 using Sackrany.Actor.Traits.Damage;
+using Sackrany.Actor.UnitMono;
 
 using UnityEngine;
 
@@ -21,7 +22,7 @@ namespace Sackrany.Actor.DefaultFeatures.Visual
         int VALUE_SCALE_ID;
 
         BigHealthBehaviourModule _bigHealthBehaviourModule;
-        Unit.Unit unit;
+        Unit unit;
         Renderer renderer;
         
         Vector3 _offset;
@@ -39,7 +40,7 @@ namespace Sackrany.Actor.DefaultFeatures.Visual
             VALUE_HIT_ID = Shader.PropertyToID("_ValueHit");
             VALUE_SCALE_ID = Shader.PropertyToID("_ValueScale");
             
-            unit = GetComponentInParent<Unit.Unit>();
+            unit = GetComponentInParent<Unit>();
             renderer = GetComponent<Renderer>();
             
             unit.OnStartWorking += Init;
@@ -47,12 +48,12 @@ namespace Sackrany.Actor.DefaultFeatures.Visual
             
             unit.OnRestart += OnUnitReset;
         }
-        void OnUnitReset(Unit.Unit obj)
+        void OnUnitReset(Unit obj)
         {
             transform.SetParent(obj.IsActive ? null : unit.transform, true);
             transform.localScale = _scale;
         }
-        void Init(Unit.Unit obj)
+        void Init(Unit obj)
         {
             initialized = unit.TryGet(out _bigHealthBehaviourModule);
             if (!initialized) return;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 
 using Sackrany.Actor.Modules;
+using Sackrany.Variables.Numerics;
 
 using UnityEngine;
 
@@ -18,29 +19,17 @@ namespace Sackrany.Actor.Static
         public static uint BuildFromTemplates(IEnumerable<object> templates)
         {
             uint hash = Begin();
-
-            foreach (var t in templates
-                         .OrderBy(t => t.GetType().FullName))
+            foreach (var t in templates.OrderBy(t => t.GetType().FullName))
             {
                 var type = t.GetType();
                 hash = AddString(hash, type.FullName);
 
-                foreach (var field in type.GetFields(
-                             BindingFlags.Instance |
-                             BindingFlags.Public |
-                             BindingFlags.NonPublic))
-                {
-                    var attr = field.GetCustomAttribute<HashKeyAttribute>();
-                    if (attr == null) continue;
-
-                    var value = field.GetValue(t);
-                    hash = AddValue(hash, value, attr);
-                }
+                foreach (var hk in TemplateReflectionCache.GetHashKeys(type))
+                    hash = AddValue(hash, hk.Field.GetValue(t), hk.Attr);
             }
-
             return hash;
         }
-        private static uint AddValue(uint hash, object value, HashKeyAttribute attr)
+        static uint AddValue(uint hash, object value, HashKeyAttribute attr)
         {
             if (value == null)
                 return Add(hash, 0u);
@@ -50,29 +39,107 @@ namespace Sackrany.Actor.Static
 
             return value switch
             {
-                int v   => Add(hash, unchecked((uint)v)),
-                bool v  => Add(hash, v ? 1u : 0u),
-                Enum v  => Add(hash, unchecked((uint)Convert.ToInt32(v))),
+                int v => Add(hash, unchecked((uint)v)),
+                uint v => Add(hash, v),
+                long v => AddLong(hash, unchecked((ulong)v)),
+                ulong v => AddLong(hash, v),
+                short v => Add(hash, unchecked((uint)v)),
+                byte v => Add(hash, v),
+                bool v => Add(hash, v ? 1u : 0u),
+                Enum v => Add(hash, unchecked((uint)Convert.ToInt32(v))),
 
                 float v => Add(hash, Quantize(v, attr.Precision)),
+                double v => AddDouble(hash, v, attr.Precision),
+
+                string v => AddString(hash, v),
+
+                Vector2 v => AddFloat2(hash, v.x, v.y, attr.Precision),
+                Vector3 v => AddFloat3(hash, v.x, v.y, v.z, attr.Precision),
+                Vector4 v => AddFloat4(hash, v.x, v.y, v.z, v.w, attr.Precision),
+                Vector2Int v => AddInt2(hash, v.x, v.y),
+                Vector3Int v => AddInt3(hash, v.x, v.y, v.z),
+                Quaternion v => AddFloat4(hash, v.x, v.y, v.z, v.w, attr.Precision),
+                Color v => AddFloat4(hash, v.r, v.g, v.b, v.a, attr.Precision),
+                Color32 v => AddInt4(hash, v.r, v.g, v.b, v.a),
+                
+                BigNumber v => AddBigNumber(hash, v.Normalize(), attr.Precision),
 
                 _ => throw new Exception(
                     $"Unsupported HashKey type: {value.GetType()}")
             };
         }
         
-        private static object GetDefault(Type type)
-            => type.IsValueType ? Activator.CreateInstance(type) : null;
-
-        private static uint AddString(uint hash, string str)
+        static object GetDefault(Type type) => type.IsValueType ? Activator.CreateInstance(type) : null;
+        static uint AddLong(uint hash, ulong v)
+        {
+            hash = Add(hash, (uint)(v & 0xFFFFFFFF));
+            hash = Add(hash, (uint)(v >> 32));
+            return hash;
+        }
+        static uint AddDouble(uint hash, double v, int precision)
+        {
+            if (double.IsNaN(v) || double.IsInfinity(v))
+                throw new Exception("Invalid double value for hashing");
+            if (v == 0.0) v = 0.0;
+            long quantized = (long)Math.Round(v / Math.Pow(10, precision));
+            return AddLong(hash, unchecked((ulong)quantized));
+        }
+        static uint AddFloat2(uint hash, float x, float y, int p)
+        {
+            hash = Add(hash, Quantize(x, p));
+            hash = Add(hash, Quantize(y, p));
+            return hash;
+        }
+        static uint AddFloat3(uint hash, float x, float y, float z, int p)
+        {
+            hash = Add(hash, Quantize(x, p));
+            hash = Add(hash, Quantize(y, p));
+            hash = Add(hash, Quantize(z, p));
+            return hash;
+        }
+        static uint AddFloat4(uint hash, float x, float y, float z, float w, int p)
+        {
+            hash = Add(hash, Quantize(x, p));
+            hash = Add(hash, Quantize(y, p));
+            hash = Add(hash, Quantize(z, p));
+            hash = Add(hash, Quantize(w, p));
+            return hash;
+        }
+        static uint AddInt2(uint hash, int x, int y)
+        {
+            hash = Add(hash, unchecked((uint)x));
+            hash = Add(hash, unchecked((uint)y));
+            return hash;
+        }
+        static uint AddInt3(uint hash, int x, int y, int z)
+        {
+            hash = Add(hash, unchecked((uint)x));
+            hash = Add(hash, unchecked((uint)y));
+            hash = Add(hash, unchecked((uint)z));
+            return hash;
+        }
+        static uint AddInt4(uint hash, int x, int y, int z, int w)
+        {
+            hash = Add(hash, unchecked((uint)x));
+            hash = Add(hash, unchecked((uint)y));
+            hash = Add(hash, unchecked((uint)z));
+            hash = Add(hash, unchecked((uint)w));
+            return hash;
+        }
+        static uint AddBigNumber(uint hash, BigNumber v, int precision)
+        {
+            hash = Add(hash, unchecked((uint)v.Exponent));
+            hash = AddDouble(hash, v.Mantissa, precision);
+            return hash;
+        }
+        static uint AddString(uint hash, string str)
         {
             if (str == null) return Add(hash, 0u);
             for (int i = 0; i < str.Length; i++)
                 hash = Add(hash, str[i]);
             return hash;
         }
-        
-        private static uint Quantize(float v, int precision)
+        static uint Quantize(float v, int precision)
         {
             if (precision <= 0f)
                 throw new Exception("Float HashKey requires precision");
@@ -84,6 +151,5 @@ namespace Sackrany.Actor.Static
 
             return unchecked((uint)Mathf.RoundToInt(v / Mathf.Pow(10, precision)));
         }
-
     }
 }

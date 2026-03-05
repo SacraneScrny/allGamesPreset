@@ -15,7 +15,7 @@ using UnityEngine;
 
 namespace Sackrany.Actor.Traits.EffectsFeature
 {
-    public class EffectHandlerModule : Module, IUpdateModule, IFixedUpdateModule
+    public class EffectHandlerModule : AsyncModule, IUpdateModule, IFixedUpdateModule
     {
         [Template] EffectHandler _template;
         

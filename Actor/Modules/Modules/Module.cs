@@ -10,7 +10,7 @@ namespace Sackrany.Actor.Modules.Modules
     public abstract class Module : UnitBase, IDisposable
     {
         CancellationTokenSource _lifecycleCts;
-        public CancellationToken ModuleToken => _lifecycleCts?.Token ?? CancellationToken.None;
+        public virtual CancellationToken ModuleToken => CancellationToken.None;
         
         public bool IsAwaken { get; private set; }
         public bool IsStarted { get; private set; }
@@ -21,46 +21,38 @@ namespace Sackrany.Actor.Modules.Modules
             if (IsAwaken) return;
             if (IsDisposed) return;
             TraceManager.Trace(Unit, $"        Module {GetType().Name} Awake");
-            _lifecycleCts = new CancellationTokenSource();
             IsAwaken = true;
+            OnAwakeInternal();
             OnAwake();
         }
-        protected virtual void OnAwake() { }
-        
         public void Start()
         {
             if (IsStarted) return;
             TraceManager.Trace(Unit, $"        Module {GetType().Name} Start");
+            OnStartInternal();
             IsStarted = true;
             OnStart();
         }
-        protected virtual void OnStart() { }
         
         public virtual bool OnDependencyCheck() => true;
         
-        public void Dispose()
-        {
-            if (IsDisposed) return;
-            TraceManager.Trace(Unit, $"        Module {GetType().Name} Disposed");
-            CancelLifecycle();
-            OnDispose();
-            IsDisposed = true;
-        }
-        protected virtual void OnDispose() { }
-
         public void Reset()
         {
             if (!IsStarted) return;
             if (IsDisposed) return;
             TraceManager.Trace(Unit, $"        Module {GetType().Name} Reseted");
-            
-            CancelLifecycle();
-            _lifecycleCts = new CancellationTokenSource();
-            
+            OnResetInternal();
             IsStarted = false;
             OnReset();
         }
-        protected virtual void OnReset() { }
+        public void Dispose()
+        {
+            if (IsDisposed) return;
+            TraceManager.Trace(Unit, $"        Module {GetType().Name} Disposed");
+            OnDisposeInternal();
+            OnDispose();
+            IsDisposed = true;
+        }
         
         public bool Add(ModuleTemplate template, out Module module) => Controller.Add(template, out module);
         public bool Add(ModuleTemplate template) => Controller.Add(template);
@@ -88,17 +80,41 @@ namespace Sackrany.Actor.Modules.Modules
         public bool IsInitialized()
             => IsStarted && !IsDisposed;
         
-        void CancelLifecycle()
-        {
-            if (_lifecycleCts != null)
-            {
-                _lifecycleCts.Cancel();
-                _lifecycleCts.Dispose();
-                _lifecycleCts = null;
-            }
-        }
-        
         public virtual void OnDrawGizmos() { }
+        
+        private protected virtual void OnAwakeInternal() { }
+        private protected virtual void OnStartInternal() { }
+        private protected virtual void OnResetInternal() { }
+        private protected virtual void OnDisposeInternal() { }
+        
+        protected virtual void OnAwake() { }
+        protected virtual void OnStart() { }
+        protected virtual void OnReset() { }
+        protected virtual void OnDispose() { }
+    }
+    public class AsyncModule : Module
+    {
+        CancellationTokenSource _lifecycleCts;
+        public sealed override CancellationToken ModuleToken => _lifecycleCts?.Token ?? CancellationToken.None;
+
+        private protected sealed override void OnAwakeInternal()
+            => _lifecycleCts = new CancellationTokenSource();
+
+        private protected sealed override void OnStartInternal()
+        {
+            if (_lifecycleCts == null || _lifecycleCts.IsCancellationRequested)
+                _lifecycleCts = new CancellationTokenSource();
+        }
+
+        private protected sealed override void OnResetInternal()
+            => _lifecycleCts?.Cancel();
+
+        private protected sealed override void OnDisposeInternal()
+        {
+            _lifecycleCts?.Cancel();
+            _lifecycleCts?.Dispose();
+            _lifecycleCts = null;
+        }
     }
 
     public interface ModuleTemplate
