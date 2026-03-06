@@ -12,6 +12,7 @@ using UnityEngine;
 
 namespace Sackrany.Actor.UnitMono
 {
+    [TraceAll]
     public class Unit : MonoBehaviour, IEquatable<Unit>, IPoolable, ITraceable
     {
         public bool DebugTracing;
@@ -36,7 +37,6 @@ namespace Sackrany.Actor.UnitMono
         
         void Awake()
         {
-            TraceManager.Trace(this, $"Unit MonoBehaviour Awake()");
             Application.quitting += OnApplicationQuitting;
             
             Hash = SimpleId.Next();
@@ -56,7 +56,6 @@ namespace Sackrany.Actor.UnitMono
         void OnApplicationQuitting() => _isQuitting = true;
         void Start()
         {
-            TraceManager.Trace(this, $"Unit MonoBehaviour Start()");
             Controller.Start();
         }
 
@@ -107,7 +106,6 @@ namespace Sackrany.Actor.UnitMono
         public bool IsDeserialized {get; private set;}
         public void MarkAsDeserialized()
         {
-            TraceManager.Trace(this, $"Unit Deserialized");
             IsDeserialized = true;
         }
         #endregion
@@ -115,7 +113,6 @@ namespace Sackrany.Actor.UnitMono
         public void StartWork()
         {
             if (IsWorking) return;
-            TraceManager.Trace(this, $"Unit Start Working");
             IsWorking = true;
             UnitRegisterManager.RegisterUnit(this);
             OnStartWorking?.Invoke(this);
@@ -123,7 +120,6 @@ namespace Sackrany.Actor.UnitMono
         public void StopWork()
         {
             if (!IsWorking) return;
-            TraceManager.Trace(this, $"Unit Stop Working");
             IsWorking = false;
             UnitRegisterManager.UnregisterUnit(this);
             OnStopWorking?.Invoke(this);
@@ -137,7 +133,6 @@ namespace Sackrany.Actor.UnitMono
             Event.Reset();
             TimeFlow.Clear();
             Controller.ResetState();
-            TraceManager.Trace(this, $"Unit ResetState");
         }
         public void Reinitialize()
         {
@@ -146,19 +141,16 @@ namespace Sackrany.Actor.UnitMono
             Event.Reset();
             TimeFlow.Clear();
             Controller.Reinitialize();
-            TraceManager.Trace(this, $"Unit Reinitialized");
         }
         
         public void OnPooled()
         {
-            TraceManager.Trace(this, $"Unit Pooled");
             gameObject.SetActive(true);
             Reinitialize();
             if (WorkByDefault) StartWork();
         }
         public void OnReleased()
         {
-            TraceManager.Trace(this, $"Unit Released");
             StopWork();
             gameObject.SetActive(false);
         }
@@ -202,7 +194,6 @@ namespace Sackrany.Actor.UnitMono
         void OnDestroy()
         {
             if (_isQuitting) return;
-            TraceManager.Trace(this, $"Unit Destroyed");
             Controller.Dispose();
             UnitRegisterManager.UnregisterUnit(this);
             Application.quitting -= OnApplicationQuitting;

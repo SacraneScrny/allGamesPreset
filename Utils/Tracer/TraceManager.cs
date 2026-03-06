@@ -19,7 +19,8 @@ namespace Sackrany.Utils.Tracer
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         public static void Trace(ITraceable from, string message)
         {
-            if (!Instance.IsTraceEnabled || !from.IsTracing()) return;
+            if (from == null || !from.IsTracing()) return;    // ← добавить null-check
+            if (Instance == null || !Instance.IsTraceEnabled) return; // ← Instance тоже
             if (!Instance.traces.TryGetValue(from, out var sb))
             {
                 sb = (new refInt(0), new StringBuilder());

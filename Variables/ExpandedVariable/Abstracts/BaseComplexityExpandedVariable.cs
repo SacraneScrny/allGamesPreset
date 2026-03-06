@@ -97,5 +97,7 @@ namespace Sackrany.Variables.ExpandedVariable.Abstracts
             return clone;
         }
         protected virtual void HandleCloned(BaseComplexityExpandedVariable<T> clone) { }
+        
+        public int Count => BaseAdditional.Count + Multiply.Count + PostAdditional.Count;
     }
 }

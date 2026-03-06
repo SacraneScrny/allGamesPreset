@@ -4,6 +4,8 @@ using Sackrany.Actor.Modules;
 using Sackrany.Actor.Modules.ModuleComposition;
 using Sackrany.Actor.Modules.Modules;
 using Sackrany.Actor.Static;
+using Sackrany.Actor.Traits.Conditions;
+using Sackrany.Actor.Traits.Stats;
 using Sackrany.Variables.ExpandedVariable.Entities;
 
 using UnityEngine;
@@ -13,6 +15,8 @@ namespace Sackrany.Actor.DefaultFeatures.BehaviourFeature.Modules
     public abstract class MovementBehaviourModule : Module
     {
         [Template] protected MovementBehaviour _template;
+        [Dependency] protected StatHandlerModule _stats;
+        [Dependency] protected ConditionHandlerModule _conditions;
         protected Vector3 _currentMove;
         
         public bool WasMoved { get; protected set; }
@@ -24,37 +28,40 @@ namespace Sackrany.Actor.DefaultFeatures.BehaviourFeature.Modules
         public Vector3 AdditionalVelocity;
         public ExpandedBool IsSprinting;
         public ExpandedFloat SprintMultiplier;
-        public ExpandedFloat MoveSpeed;
+
+        ExpandedFloat _moveSpeed;
         
         protected override void OnAwake()
         {
             IsSprinting = false;
             AdditionalVelocity = Vector3.zero;
             SprintMultiplier = _template.sprintMultiplier;
-            MoveSpeed = _template.moveSpeed;
         }
         protected override void OnReset()
         {
             OnGrounded = null;
             SprintMultiplier.Clear();
             IsSprinting.Clear();
-            MoveSpeed.Clear();
+            _moveSpeed = _stats.GetStat<MoveSpeed>();
         }
         public void Move(Vector3 direction)
         {
-            LastMoveSpeed = MoveSpeed * (IsSprinting ? SprintMultiplier : 1f);
+            if (!_conditions.IsAllowed<CanMove>()) return;
+            LastMoveSpeed = _moveSpeed * (IsSprinting ? SprintMultiplier : 1f);
             _currentMove += (direction.normalized * LastMoveSpeed);
             WasMoved = true;
         }
         public void MoveRaw(Vector3 direction)
         {
-            LastMoveSpeed = MoveSpeed * (IsSprinting ? SprintMultiplier : 1f);
+            if (!_conditions.IsAllowed<CanMove>()) return;
+            LastMoveSpeed = _moveSpeed * (IsSprinting ? SprintMultiplier : 1f);
             _currentMove += (direction * LastMoveSpeed);
             WasMoved = true;
         }
         public void MoveRelative(Vector3 direction)
         {
-            LastMoveSpeed = MoveSpeed * (IsSprinting ? SprintMultiplier : 1f);
+            if (!_conditions.IsAllowed<CanMove>()) return;
+            LastMoveSpeed = _moveSpeed * (IsSprinting ? SprintMultiplier : 1f);
             _currentMove += (Unit.transform.TransformDirection(direction.normalized) * LastMoveSpeed);
             WasMoved = true;
         }
@@ -150,7 +157,6 @@ namespace Sackrany.Actor.DefaultFeatures.BehaviourFeature.Modules
     {
         public ControllerType controllerType;
         public bool isFlying;
-        public float moveSpeed;
         public float sprintMultiplier;
         public int GetId() => controllerType switch
         {
